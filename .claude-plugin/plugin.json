@@ -1,0 +1,15 @@
+{
+  "name": "mod-mascottes",
+  "version": "0.1.0",
+  "description": "Deux mascottes pixel art : une sorcière pour le contexte, un chat pour l'usage restant sur la fenêtre de 5 heures.",
+  "types": "./types/index.d.ts",
+  "userConfig": {
+    "size": {
+      "type": "string",
+      "title": "Taille des mascottes",
+      "description": "full : 40 x 33 cellules par mascotte (tous les détails). half : 20 x 17, pour un pane étroit.",
+      "default": "full",
+      "options": ["full", "half"]
+    }
+  }
+}

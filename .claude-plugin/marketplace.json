@@ -1,0 +1,12 @@
+{
+  "name": "mod-mascottes",
+  "owner": { "name": "B3zou" },
+  "description": "Mod Claude Code : mascottes pixel art pour le contexte et l'usage restant.",
+  "plugins": [
+    {
+      "name": "mod-mascottes",
+      "source": "./",
+      "description": "Deux mascottes pixel art dans un pane : une sorcière pour le contexte, un chat pour l'usage restant sur la fenêtre de 5 heures."
+    }
+  ]
+}

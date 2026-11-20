@@ -40,7 +40,7 @@ Ouvre `/config` et cherche le mod :
 
 | Réglage | Valeurs | Effet |
 |---|---|---|
-| `size` | `full` (défaut), `compact`, `half` | `full` : chaque mascotte fait 40 x 33 cellules (tous les détails). `compact` : 20 x 17 cellules, en quadrants (`▘▝▖▗…`, 2 x 2 pixels par cellule) : la moitié des pixels sont gardés, contre un quart pour `half`. `half` : 20 x 17 cellules en demi-blocs, pour un terminal qui ne dessine pas bien les quadrants. |
+| `size` | `full` (défaut), `half` | `full` : chaque mascotte fait 40 x 33 cellules (tous les détails). `half` : 20 x 17 cellules, pour un pane étroit. |
 
 ## Ce qu'il faut savoir
 
@@ -53,7 +53,7 @@ Ouvre `/config` et cherche le mod :
 
 Les sprites sont portés de scripts Python qui dessinent pixel par pixel : rectangles de couleur, contour automatique, éclairage de bord, puis détails du visage posés après le contour.
 
-- `hooks/pixels.ts` : moteur de pixels (canevas, contour, conversion en demi-blocs ou en quadrants, réductions).
+- `hooks/pixels.ts` : moteur de pixels (canevas, contour, conversion en demi-blocs, réduction 2x2).
 - `hooks/witch.ts` : la sorcière (40 x 66 px, 11 paliers x 6 frames, interpolation continue).
 - `hooks/cat.ts` : le chat et sa tour de pièces (40 x 66 px, idle de 6 frames, lancer de 8 frames).
 - `hooks/catmachine.ts` : la machine à états du chat (idle, lancer, rattrapage).

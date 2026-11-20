@@ -3,7 +3,7 @@ import type { ElementTable, Register } from 'claude-code'
 
 import { drawCatIdle } from './cat'
 import { createCatMachine } from './catmachine'
-import { downscale2, downscaleV2, encodeCells, toQuadrantWords, toRasterWords, type Canvas } from './pixels'
+import { downscale2, encodeCells, toRasterWords, type Canvas } from './pixels'
 import { drawWitchPct, witchSig } from './witch'
 
 const PANE = 'mascottes'
@@ -35,17 +35,10 @@ const cat = createCatMachine()
 const idleFrame = () => Math.floor((tick * TICK_MS) / 166) % 6
 
 export const register: Register = (on, options) => {
-  // Option `size`, cellules par mascotte :
-  //   full    40 x 33, demi-blocs, tous les pixels ;
-  //   compact 20 x 17, quadrants sur l'image reduite en hauteur seulement ;
-  //   half    20 x 17, demi-blocs sur l'image reduite de moitie.
-  const mode = options.size === 'half' || options.size === 'compact' ? options.size : 'full'
-  const size = mode === 'full' ? { columns: 40, rows: 33 } : { columns: 20, rows: 17 }
-  const toCells = (cv: Canvas): string =>
-    encodeCells(
-      mode === 'compact' ? toQuadrantWords(downscaleV2(cv))
-        : toRasterWords(mode === 'half' ? downscale2(cv) : cv),
-    )
+  // Option `size` : "full" (40 x 33 cellules par mascotte) ou "half" (20 x 17).
+  const half = options.size === 'half'
+  const size = half ? { columns: 20, rows: 17 } : { columns: 40, rows: 33 }
+  const toCells = (cv: Canvas): string => encodeCells(toRasterWords(half ? downscale2(cv) : cv))
 
   on('session.start', async ($, e, next) => {
     await $.command.register({

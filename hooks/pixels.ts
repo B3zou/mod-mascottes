@@ -81,8 +81,6 @@ export class Canvas {
   }
 }
 
-const lum = (c: Color) => ((c >> 16) & 255) * 3 + ((c >> 8) & 255) * 6 + (c & 255)
-
 /**
  * Reduit de moitie : chaque bloc 2x2 donne un pixel. Vide s'il a moins de 2
  * pixels pleins ; sinon la couleur majoritaire, a egalite la plus sombre
@@ -90,6 +88,7 @@ const lum = (c: Color) => ((c >> 16) & 255) * 3 + ((c >> 8) & 255) * 6 + (c & 25
  */
 export const downscale2 = (cv: Canvas): Canvas => {
   const out = new Canvas(Math.ceil(cv.w / 2), Math.ceil(cv.h / 2))
+  const lum = (c: Color) => ((c >> 16) & 255) * 3 + ((c >> 8) & 255) * 6 + (c & 255)
   for (let y = 0; y < out.h; y++) {
     for (let x = 0; x < out.w; x++) {
       const cs = [cv.get(2 * x, 2 * y), cv.get(2 * x + 1, 2 * y), cv.get(2 * x, 2 * y + 1), cv.get(2 * x + 1, 2 * y + 1)]
@@ -105,23 +104,6 @@ export const downscale2 = (cv: Canvas): Canvas => {
         }
       }
       out.set(x, y, best)
-    }
-  }
-  return out
-}
-
-/**
- * Reduit de moitie en hauteur seulement : chaque paire verticale donne un pixel.
- * Un pixel plein l'emporte sur le vide ; deux couleurs : la plus sombre (les
- * contours survivent).
- */
-export const downscaleV2 = (cv: Canvas): Canvas => {
-  const out = new Canvas(cv.w, Math.ceil(cv.h / 2))
-  for (let y = 0; y < out.h; y++) {
-    for (let x = 0; x < out.w; x++) {
-      const a = cv.get(x, 2 * y)
-      const b = cv.get(x, 2 * y + 1)
-      out.set(x, y, a === 0 ? b : b === 0 ? a : lum(b) < lum(a) ? b : a)
     }
   }
   return out
@@ -171,60 +153,6 @@ export const toRasterWords = (cv: Canvas, bg = 0x1e1e1e): Uint32Array => {
       words[i] = cp
       words[i + 1] = fg
       words[i + 2] = bgc
-    }
-  }
-  return words
-}
-
-// Quadrants : masque (1 haut-gauche, 2 haut-droite, 4 bas-gauche, 8 bas-droite) -> caractere.
-const QUADRANTS = [
-  0x20, 0x2598, 0x259d, 0x2580, 0x2596, 0x258c, 0x259e, 0x259b,
-  0x2597, 0x259a, 0x2590, 0x259c, 0x2584, 0x2599, 0x259f, 0x2588,
-]
-
-/**
- * Quadrants : une cellule = 2x2 pixels, mais 2 couleurs seulement (avant-plan
- * et fond). Dans un bloc a 3 couleurs ou plus, garde la paire qui s'ecarte le
- * moins de l'original (le vide compte comme le fond du terminal). Les pixels
- * sont deux fois plus hauts que larges : passer une image reduite en hauteur.
- */
-export const toQuadrantWords = (cv: Canvas, bg = 0x1e1e1e): Uint32Array => {
-  const cols = Math.ceil(cv.w / 2)
-  const rows = Math.ceil(cv.h / 2)
-  const words = new Uint32Array(cols * rows * 3)
-  const rgb = (c: Color) => (c === 0 ? bg : flatten(c, bg))
-  const dist = (a: number, b: number) => {
-    const dr = ((a >> 16) & 255) - ((b >> 16) & 255)
-    const dg = ((a >> 8) & 255) - ((b >> 8) & 255)
-    const db = (a & 255) - (b & 255)
-    return 3 * dr * dr + 6 * dg * dg + db * db
-  }
-  for (let r = 0; r < rows; r++) {
-    for (let x = 0; x < cols; x++) {
-      const px = [cv.get(2 * x, 2 * r), cv.get(2 * x + 1, 2 * r), cv.get(2 * x, 2 * r + 1), cv.get(2 * x + 1, 2 * r + 1)]
-      const uniq = [...new Set(px)]
-      let a = uniq[0]!
-      let b = uniq[1] ?? uniq[0]!
-      if (uniq.length > 2) {
-        let best = Infinity
-        for (let i = 0; i < uniq.length; i++) {
-          for (let j = i + 1; j < uniq.length; j++) {
-            const ci = rgb(uniq[i]!), cj = rgb(uniq[j]!)
-            const err = px.reduce((s, p) => s + Math.min(dist(rgb(p), ci), dist(rgb(p), cj)), 0)
-            if (err < best) { best = err; a = uniq[i]!; b = uniq[j]! }
-          }
-        }
-      }
-      // a = avant-plan ; le vide ne peut etre que le fond (couleur par defaut).
-      if (a === 0) [a, b] = [b, a]
-      let mask = 0
-      px.forEach((p, k) => {
-        if (p === a || (p !== b && dist(rgb(p), rgb(a)) <= dist(rgb(p), rgb(b)))) mask |= 1 << k
-      })
-      const i = (r * cols + x) * 3
-      words[i] = a === 0 ? 0x20 : QUADRANTS[mask]!
-      words[i + 1] = a === 0 ? DEFAULT : flatten(a, bg)
-      words[i + 2] = b === 0 || b === a ? DEFAULT : flatten(b, bg)
     }
   }
   return words

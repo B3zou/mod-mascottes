@@ -2,7 +2,7 @@ import { expect, test } from 'claude-code/testing'
 
 import { drawCatIdle, drawCatThrow, H as CAT_H, W as CAT_W } from '../hooks/cat'
 import { createCatMachine, MAX_QUEUED_THROWS, THROW_FRAMES } from '../hooks/catmachine'
-import { Canvas, downscale2, pyRound, rgba, toRasterWords } from '../hooks/pixels'
+import { Canvas, downscale2, downscaleV2, pyRound, rgba, toQuadrantWords, toRasterWords } from '../hooks/pixels'
 import { booksFor, drawWitch, drawWitchPct, H as WITCH_H, levelFor, NF, STATES, W as WITCH_W, witchSig } from '../hooks/witch'
 
 const filled = (cv: Canvas) => cv.px.reduce((n, c) => n + (c !== 0 ? 1 : 0), 0)
@@ -56,6 +56,52 @@ test('downscale2 : moitie de taille, les pixels isoles disparaissent, le sombre 
   expect([out.w, out.h]).toEqual([2, 2])
   expect(out.get(0, 0)).toBe(dark)
   expect(out.get(1, 1)).toBe(0)
+})
+
+test('downscaleV2 : moitie en hauteur seulement, le plein bat le vide, le sombre gagne', () => {
+  const dark = rgba(10, 10, 10)
+  const light = rgba(200, 200, 200)
+  const cv = new Canvas(3, 4)
+  cv.set(0, 0, light); cv.set(0, 1, dark) // deux couleurs : la sombre
+  cv.set(1, 1, light) // un seul plein : garde
+  const out = downscaleV2(cv)
+  expect([out.w, out.h]).toEqual([3, 2])
+  expect([out.get(0, 0), out.get(1, 0), out.get(2, 0), out.get(0, 1)]).toEqual([dark, light, 0, 0])
+})
+
+test('toQuadrantWords : 2x2 pixels par cellule, le vide devient le fond par defaut', () => {
+  const red = rgba(255, 0, 0)
+  const blue = rgba(0, 0, 255)
+  const cv = new Canvas(6, 2)
+  cv.set(0, 0, red) // haut-gauche seul
+  cv.set(2, 0, red); cv.set(3, 1, blue) // diagonale, deux couleurs
+  const w = toQuadrantWords(cv)
+  const cell = (x: number) => [w[x * 3], w[x * 3 + 1], w[x * 3 + 2]]
+  expect(w.length).toBe(3 * 3)
+  expect(cell(0)).toEqual([0x2598, 0xff0000, 0x01000000])
+  const c1 = cell(1)
+  expect(c1[0] === 0x2598 || c1[0] === 0x259d || c1[0] === 0x2597 || c1[0] === 0x259a).toBe(true)
+  expect(cell(2)).toEqual([0x20, 0x01000000, 0x01000000])
+})
+
+test('toQuadrantWords : avec 3 couleurs, garde les 2 qui s ecartent le moins', () => {
+  const black = rgba(0, 0, 0)
+  const white = rgba(255, 255, 255)
+  const nearWhite = rgba(250, 250, 250)
+  const cv = new Canvas(2, 2)
+  cv.set(0, 0, black); cv.set(1, 0, white); cv.set(0, 1, nearWhite); cv.set(1, 1, white)
+  const [cp, fg, bg] = toQuadrantWords(cv, 0x000000)
+  expect(new Set([fg, bg])).toEqual(new Set([0x000000, 0xffffff]))
+  // le noir seul d'un cote, les trois clairs de l'autre
+  expect(cp).toBe(fg === 0x000000 ? 0x2598 : 0x259f)
+})
+
+test('toutes les tailles tiennent dans leur Raster', () => {
+  for (const cv of [drawCatIdle(100, 0), drawWitchPct(50, 0)]) {
+    expect(toRasterWords(cv).length).toBe(40 * 33 * 3)
+    expect(toRasterWords(downscale2(cv)).length).toBe(20 * 17 * 3)
+    expect(toQuadrantWords(downscaleV2(cv)).length).toBe(20 * 17 * 3)
+  }
 })
 
 // ---------------------------------------------------------------- sorciere

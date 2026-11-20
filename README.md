@@ -40,11 +40,11 @@ Ouvre `/config` et cherche le mod :
 
 | Réglage | Valeurs | Effet |
 |---|---|---|
-| `size` | `full` (défaut), `half` | `full` : chaque mascotte fait 40 x 33 cellules (tous les détails). `half` : 20 x 17 cellules, pour un pane étroit. |
+| `size` | `full` (défaut), `compact`, `half` | `full` : chaque mascotte fait 40 x 33 cellules (tous les détails). `compact` : 20 x 17 cellules, en quadrants (`▘▝▖▗…`, 2 x 2 pixels par cellule) : la moitié des pixels sont gardés, contre un quart pour `half`. `half` : 20 x 17 cellules en demi-blocs, pour un terminal qui ne dessine pas bien les quadrants. |
 
 ## Ce qu'il faut savoir
 
-- **Terminal.** Les mascottes sont dessinées avec des demi-blocs (`▀`) colorés, ce qui marche dans les terminaux en couleurs 24 bits. Testé dans Windows Terminal. Avec `size: full`, les deux mascottes côte à côte demandent environ 82 colonnes de large et 35 lignes de haut.
+- **Terminal.** Les mascottes sont dessinées avec des demi-blocs (`▀`) colorés, ce qui marche dans les terminaux en couleurs 24 bits. Testé dans Windows Terminal. Avec `size: full`, les deux mascottes côte à côte demandent environ 82 colonnes de large et 35 lignes de haut. Si le pane est plus étroit, le chat passe sous la sorcière.
 - **Source des données.** Le contexte vient de la mesure de la session. L'usage restant est `100 moins le pourcentage utilisé` de la fenêtre `five_hour` rapportée par Claude Code. Cette fenêtre n'existe que sur un abonnement : sans abonnement, le chat reste à 100 %.
 - **Pourcentages entiers.** Le contexte arrive en pourcentage entier, donc la sorcière change au mieux tous les 1 %. Son nombre de grimoires suit une interpolation continue (un de plus environ tous les 7 %), alors que sa pose et son visage changent par paliers de 10 %.
 - **Lancers.** Si l'usage restant tombe de plusieurs pourcents d'un coup, le chat ne rejoue que 3 lancers puis rattrape la valeur. Si la fenêtre se renouvelle, le tas se remplit d'un coup.
@@ -53,7 +53,7 @@ Ouvre `/config` et cherche le mod :
 
 Les sprites sont portés de scripts Python qui dessinent pixel par pixel : rectangles de couleur, contour automatique, éclairage de bord, puis détails du visage posés après le contour.
 
-- `hooks/pixels.ts` : moteur de pixels (canevas, contour, conversion en demi-blocs, réduction 2x2).
+- `hooks/pixels.ts` : moteur de pixels (canevas, contour, conversion en demi-blocs ou en quadrants, réductions).
 - `hooks/witch.ts` : la sorcière (40 x 66 px, 11 paliers x 6 frames, interpolation continue).
 - `hooks/cat.ts` : le chat et sa tour de pièces (40 x 66 px, idle de 6 frames, lancer de 8 frames).
 - `hooks/catmachine.ts` : la machine à états du chat (idle, lancer, rattrapage).
